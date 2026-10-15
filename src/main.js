@@ -79,10 +79,14 @@ canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointer
 canvas.addEventListener('wheel',e=>{e.preventDefault();const p=local(e);zoomTo(view.camera.zoom*Math.exp(-e.deltaY*.001),p.x,p.y);},{passive:false});
 function selectAt(x,y){
   const hits=renderer.pick(x,y);
+  // Doorways navigate immediately, including while a zone/dig tool is active.
+  if(hits[0]?.id==='entrance'){
+    switchScene(view.scene==='surface'?'underground':'surface');return;
+  }
   if(hits.length&&(view.tool==='inspect'||view.scene==='surface')){
     view.selected={id:hits[0].id,type:hits[0].type};renderPanel();renderResidents();
     // Offer all nearby targets explicitly; a tree cannot swallow a resident's selection.
-    if(hits.length>1)for(const h of hits.slice(1,4)){const b=world.residents.find(r=>r.id===h.id),r=world.resources.find(r=>r.id===h.id);action('附近：'+(b?.name||({berry:'野莓',tree:'小樹',fiber:'纖維',mushroom:'蘑菇',nut:'堅果',branch:'枝條'})[r?.type]||'洞口'),()=>{view.selected={id:h.id};renderPanel();renderResidents();});}
+    if(hits.length>1)for(const h of hits.slice(1,4)){const b=world.residents.find(r=>r.id===h.id),r=world.resources.find(r=>r.id===h.id);action('附近：'+(b?.name||({berry:'野莓',tree:'小樹',fiber:'纖維',mushroom:'蘑菇',nut:'堅果',branch:'枝條'})[r?.type]||'洞口'),()=>{if(h.id==='entrance'){switchScene(view.scene==='surface'?'underground':'surface');return;}view.selected={id:h.id};renderPanel();renderResidents();});}
     return;
   }
   if(view.scene==='underground'){

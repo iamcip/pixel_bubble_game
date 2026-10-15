@@ -30,6 +30,17 @@ const actions=()=>byId('#actions').children;
 const title=()=>byId('#selection').children[0].textContent;
 test('UI module initializes, renders both scenes, picks residents, supports markers and rejects drag/pinch taps',()=>{
   frame(1000);frame(1016);assert.equal(byId('#residents').children.length,5);
+  // One tap enters the doorway. A drag there must never navigate.
+  pointer('pointerdown',252,147);pointer('pointermove',272,147);pointer('pointerup',272,147);
+  assert.equal(byId('#scene-label').textContent,'');
+  click('#recenter');frame(1017);tap(252,147);
+  assert.equal(byId('#scene-label').textContent,'還沒寫下的家');
+  frame(1018);
+  tools().find(b=>b.textContent.includes('挖掘')).onclick();
+  tap(195,106);
+  assert.equal(byId('#scene-label').textContent,'微光森林');
+  assert.equal(byId('#mark-count').textContent,'0 個工作標記');
+  frame(1019);
   byId('#residents').children[0].onclick();assert.match(title(),/米米/);actions()[2].onclick();frame(1032);
   click('#underground');frame(1048);assert.match(title(),/箱子/);
   tools().find(b=>b.textContent.includes('挖掘')).onclick();
