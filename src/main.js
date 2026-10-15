@@ -43,17 +43,21 @@ function renderPanel(){
   const resident=world.residents.find(b=>b.id===id);
   if(resident){panel(`${resident.name} · 小小探險家`,resident.note);for(const [mode,label] of [['idle','待機'],['hop','跳行'],['haul','搬運'],['work','工作']]){const b=action(label,()=>{view.animations[id]=mode;renderPanel();});b.setAttribute('aria-pressed',String((view.animations[id]||'idle')===mode));}return;}
   const r=world.resources.find(r=>r.id===id);
-  if(r){const labels={berry:'一叢野莓',mushroom:'柔光蘑菇',nut:'落下的堅果',branch:'乾燥枝條',fiber:'柔軟纖維',tree:'小型軟木樹'};panel(labels[r.type],`${r.amount} ${['berry','mushroom','nut'].includes(r.type)?'份食物':'單位材料'} · ${world.marks.has(id)?'已標記，等待 M2 派工':'可點選標記；本版不採集或增加庫存'}`);action(world.marks.has(id)?'取消標記':'標記'+(r.type==='tree'?'砍伐':'採集'),()=>{if(world.marks.has(id))world.marks.delete(id);else world.marks.set(id,{id:`gather-${id}`,type:'gather',target:id});renderPanel();},true);return;}
+  if(r){const labels={berry:'一叢野莓',mushroom:'柔光蘑菇',nut:'落下的堅果',branch:'乾燥枝條',fiber:'柔軟纖維',tree:'小型軟木樹'};
+    const verb=r.type==='tree'?'砍伐':'採集';
+    panel(labels[r.type],`${r.amount} ${['berry','mushroom','nut'].includes(r.type)?'份食物':'單位材料'} · ${world.marks.has(id)?`已標記，等待泡泡${verb}；再點物品可取消`:'點一下物品即可標記'}。目前為操作預覽，尚未派工。`);
+    action(world.marks.has(id)?'取消標記':'標記'+verb,()=>{toggleResource(r);renderPanel();},true);return;
+  }
   if(id.startsWith('cell-')){const {x,y}=view.selected,open=world.floor.has(key(x,y));
-    panel(open?'可以慢慢安家的地方':`未開挖泥土 · ${x+1}, ${y+1}`,open?(world.zones.get(key(x,y))==='sleep'?'睡眠區預覽 · 地板也可以休息。':world.zones.get(key(x,y))==='storage'?'儲物區預覽 · 還未實際存放物品。':'已開挖地面 · 可指定區域。'):(digStatus(world,x,y)==='waiting-path'?'目前不相鄰；開通道路後才可施工。':'相鄰通路可達 · 標記不會立即挖開。'));
-    if(!open)action(world.marks.has(key(x,y))?'取消挖掘標記':'標記挖掘',()=>{toggleDig(world,x,y);renderPanel();},true);
+    panel(open?'可以慢慢安家的地方':`未開挖泥土 · ${x+1}, ${y+1}`,open?(world.zones.get(key(x,y))==='sleep'?'睡眠區預覽 · 地板也可以休息。':world.zones.get(key(x,y))==='storage'?'儲物區預覽 · 還未實際存放物品。':'已開挖地面 · 可指定區域。'):(digStatus(world,x,y)==='waiting-path'?'已標記時需等待通路開通，才可挖掘。':world.marks.has(key(x,y))?'已標記，等待泡泡挖掘；目前為操作預覽。':'相鄰通路可達 · 點一下即可標記。'));
+    if(!open)action(world.marks.has(key(x,y))?'取消挖掘標記':'標記挖掘',()=>{markDig(x,y);renderPanel();},true);
     else if(canPlaceZone(world,x,y))for(const [type,label] of [['sleep','睡眠區'],['storage','儲物區'],['clear','清除區域']])action(label,()=>{if(type==='clear')world.zones.delete(key(x,y));else world.zones.set(key(x,y),type);renderPanel();});
   }
 }
 function renderTools(){
   $('#tools').replaceChildren();
   const list=view.scene==='surface'?[['inspect','⌖ 觀察'],['gather','♧ 採集'],['entrance','⌂ 找山洞']]:[['inspect','⌖ 觀察'],['dig','⚒ 挖掘'],['sleep','☾ 睡眠區'],['storage','▧ 儲物區']];
-  for(const [id,label] of list){const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-pressed',String(view.tool===id));b.onclick=()=>{if(id==='entrance'){view.selected={id:'entrance'};const p=project(8,5,'surface');view.camera.x=-p.x*view.camera.zoom;view.camera.y=-p.y*view.camera.zoom+25;renderPanel();return;}view.tool=id;renderTools();toast(({inspect:'點選目標查看資訊',gather:'點選資源，再確認標記',dig:'點泥土標記，再點取消',sleep:'點已開挖地面指定睡眠區',storage:'點已開挖地面指定儲物區'})[id]);};$('#tools').append(b);}
+  for(const [id,label] of list){const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-pressed',String(view.tool===id));b.onclick=()=>{if(id==='entrance'){view.selected={id:'entrance'};const p=project(8,5,'surface');view.camera.x=-p.x*view.camera.zoom;view.camera.y=-p.y*view.camera.zoom+25;renderPanel();return;}view.tool=id;renderTools();toast(({inspect:'點選目標查看資訊',gather:'點一下資源標記，再點一下取消',dig:'點泥土標記，再點取消',sleep:'點已開挖地面指定睡眠區',storage:'點已開挖地面指定儲物區'})[id]);};$('#tools').append(b);}
 }
 const pointers=new Map();let gesture=null,pinch=null,suppressTap=false;
 function local(e){const b=canvas.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top};}
@@ -77,6 +81,22 @@ function endPointer(e){
 }
 canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);canvas.addEventListener('lostpointercapture',e=>{if(pointers.has(e.pointerId)){pointers.delete(e.pointerId);gesture=null;pinch=null;suppressTap=true;}});
 canvas.addEventListener('wheel',e=>{e.preventDefault();const p=local(e);zoomTo(view.camera.zoom*Math.exp(-e.deltaY*.001),p.x,p.y);},{passive:false});
+function toggleResource(r){
+  const verb=r.type==='tree'?'砍伐':'採集';
+  if(world.marks.has(r.id)){world.marks.delete(r.id);toast('已取消'+verb+'標記');}
+  else{world.marks.set(r.id,{id:`gather-${r.id}`,type:'gather',target:r.id});toast(`已標記，等待泡泡${verb}（目前為操作預覽）`);}
+}
+function markDig(x,y){
+  if(!toggleDig(world,x,y)){toast('這裡已經挖開，請選擇泥土格');return;}
+  toast(world.marks.has(key(x,y))?(digStatus(world,x,y)==='waiting-path'?'已標記，等待通路開通後挖掘':'已標記，等待泡泡挖掘（目前為操作預覽）'):'已取消挖掘標記');
+}
+function activateTarget(h){
+  if(h.id==='entrance'){switchScene(view.scene==='surface'?'underground':'surface');return;}
+  view.selected={id:h.id,type:h.type};
+  const r=world.resources.find(r=>r.id===h.id);
+  if(r)toggleResource(r);
+  renderPanel();renderResidents();
+}
 function selectAt(x,y){
   const hits=renderer.pick(x,y);
   // Doorways navigate immediately, including while a zone/dig tool is active.
@@ -84,16 +104,16 @@ function selectAt(x,y){
     switchScene(view.scene==='surface'?'underground':'surface');return;
   }
   if(hits.length&&(view.tool==='inspect'||view.scene==='surface')){
-    view.selected={id:hits[0].id,type:hits[0].type};renderPanel();renderResidents();
-    // Offer all nearby targets explicitly; a tree cannot swallow a resident's selection.
-    if(hits.length>1)for(const h of hits.slice(1,4)){const b=world.residents.find(r=>r.id===h.id),r=world.resources.find(r=>r.id===h.id);action('附近：'+(b?.name||({berry:'野莓',tree:'小樹',fiber:'纖維',mushroom:'蘑菇',nut:'堅果',branch:'枝條'})[r?.type]||'洞口'),()=>{if(h.id==='entrance'){switchScene(view.scene==='surface'?'underground':'surface');return;}view.selected={id:h.id};renderPanel();renderResidents();});}
+    activateTarget(hits[0]);
+    // Nearby candidates use the same one-tap operation as canvas targets.
+    if(hits.length>1)for(const h of hits.slice(1,4)){const b=world.residents.find(r=>r.id===h.id),r=world.resources.find(r=>r.id===h.id);action('附近：'+(b?.name||({berry:'野莓',tree:'小樹',fiber:'纖維',mushroom:'蘑菇',nut:'堅果',branch:'枝條'})[r?.type]||'洞口'),()=>activateTarget(h));}
     return;
   }
   if(view.scene==='underground'){
     const c=view.camera,p=unproject((x-renderer.width/2-c.x)/c.zoom,(y-renderer.height/2-c.y)/c.zoom,view.scene),gx=Math.floor(p.x+.5),gy=Math.floor(p.y+.5);
     if(!inBounds(gx,gy,'underground'))return;
     view.selected={id:`cell-${gx}-${gy}`,x:gx,y:gy};
-    if(view.tool==='dig'){if(!toggleDig(world,gx,gy))toast('這裡已經挖開，請選擇泥土格');}
+    if(view.tool==='dig'||(view.tool==='inspect'&&!world.floor.has(key(gx,gy))))markDig(gx,gy);
     if(view.tool==='sleep'||view.tool==='storage'){if(canPlaceZone(world,gx,gy)){const k=key(gx,gy);if(world.zones.get(k)===view.tool)world.zones.delete(k);else world.zones.set(k,view.tool);}else toast('請選擇可達空地，並避開箱子與出口');}
     renderPanel();renderResidents();
   }else{view.selected=null;renderPanel();renderResidents();}

@@ -41,8 +41,24 @@ test('UI module initializes, renders both scenes, picks residents, supports mark
   assert.equal(byId('#scene-label').textContent,'微光森林');
   assert.equal(byId('#mark-count').textContent,'0 個工作標記');
   frame(1019);
+  // Single-action resources mark immediately, show waiting feedback, and toggle off.
+  tap(138,168);
+  assert.equal(byId('#mark-count').textContent,'1 個工作標記');
+  assert.match(byId('#toast').textContent,/等待泡泡採集/);
+  assert.match(byId('#selection').children[1].textContent,/等待泡泡採集/);
+  tap(138,168);assert.equal(byId('#mark-count').textContent,'0 個工作標記');
+  tap(119,127);assert.match(byId('#toast').textContent,/等待泡泡砍伐/);
+  actions().find(b=>b.textContent==='取消標記').onclick();
+  assert.equal(byId('#mark-count').textContent,'0 個工作標記');
+  pointer('pointerdown',138,168);pointer('pointermove',168,198);pointer('pointerup',168,198);
+  assert.equal(byId('#mark-count').textContent,'0 個工作標記');
+  click('#recenter');frame(1020);
   byId('#residents').children[0].onclick();assert.match(title(),/米米/);actions()[2].onclick();frame(1032);
   click('#underground');frame(1048);assert.match(title(),/箱子/);
+  tap(135,188);assert.equal(byId('#mark-count').textContent,'0 個工作標記');
+  tap(165,272);assert.equal(byId('#mark-count').textContent,'1 個工作標記');
+  assert.match(byId('#toast').textContent,/等待泡泡挖掘/);
+  tap(165,272);assert.equal(byId('#mark-count').textContent,'0 個工作標記');
   tools().find(b=>b.textContent.includes('挖掘')).onclick();
   tap(165,272);assert.equal(byId('#mark-count').textContent,'1 個工作標記');
   tap(165,272);assert.equal(byId('#mark-count').textContent,'0 個工作標記');
