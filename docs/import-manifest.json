@@ -1,0 +1,40 @@
+{
+  "project": "進擊的泡泡",
+  "import_date": "2026-10-14",
+  "timezone": "America/Los_Angeles",
+  "source_document_version": "0.1",
+  "files": [
+    {
+      "path": "docs/originals/Bubble_Colony_Game_Spec_v0_1.docx",
+      "original_name": "Bubble_Colony_Game_Spec_v0_1.docx",
+      "created_date_los_angeles": "2026-10-14",
+      "kind": "game-spec",
+      "size_bytes": 45573,
+      "sha256": "304aeffdbd9c5eb1246f37019581b8b29b406a17e7a86461fd1521c23a6d8e78"
+    },
+    {
+      "path": "docs/originals/Bubble_Colony_Execution_Plan_v0_1.docx",
+      "original_name": "Bubble_Colony_Execution_Plan_v0_1.docx",
+      "created_date_los_angeles": "2026-10-14",
+      "kind": "implementation-plan",
+      "size_bytes": 42819,
+      "sha256": "3e5501b3ab06b81b1aa9e05eb1cef157946de05e153bc044eb6bdacc2650db65"
+    },
+    {
+      "path": "assets/concepts/slime-colony-concept-v1.png",
+      "original_name": "Cozy slime colony: underground and surface.png",
+      "created_date_los_angeles": "2026-10-12",
+      "kind": "concept-v1",
+      "size_bytes": 2854036,
+      "sha256": "c621e31e2e4c11d475e5e82e7b9fec62679a855f67ab7b3d9e770d38d65b4ce1"
+    },
+    {
+      "path": "assets/concepts/slime-colony-concept-v2.png",
+      "original_name": "Cozy pixel slimes: underground and surface.png",
+      "created_date_los_angeles": "2026-10-13",
+      "kind": "concept-v2",
+      "size_bytes": 2101575,
+      "sha256": "689f77397d24cdfc4359e0f6d0a0430d02de0b3c72fdc4182d87acb6910ed402"
+    }
+  ]
+}
