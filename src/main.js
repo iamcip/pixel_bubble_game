@@ -1,6 +1,7 @@
 import { CONFIG } from './data.js';
 import { initialWorld, project, unproject, inBounds, key, toggleDig, digStatus, canPlaceZone, clampCamera } from './world.js';
-import { Renderer, bubbleSprite } from './render.js';
+import { Renderer, bubbleSprite, clearSpriteCache } from './render.js?v=art-20261020';
+import { loadArt } from './art.js';
 const $=s=>document.querySelector(s), world=initialWorld(), canvas=$('#world'), renderer=new Renderer(canvas,world);
 const cameras={surface:{x:0,y:-155,zoom:1},underground:{x:0,y:-90,zoom:1}};
 const view={scene:'surface',camera:cameras.surface,selected:null,tool:'inspect',stress:false,animations:{},previewSeconds:0};
@@ -128,3 +129,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resize();resetCamera();renderResidents();renderTools();renderPanel();requestAnimationFrame(frame);
+loadArt().then(results=>{
+  clearSpriteCache();renderResidents();
+  if(results.some(r=>!r.ok))toast('部分新素材未載入，暫時使用原圖；請重新整理。');
+});

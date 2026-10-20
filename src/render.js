@@ -1,15 +1,19 @@
 import { project, key } from './world.js';
+import { getArt, drawArt } from './art.js';
 const spriteCache=new Map();
+export function clearSpriteCache(){spriteCache.clear();}
 const rect=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);};
 function poly(c,points,color){c.fillStyle=color;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();}
 export function bubbleSprite(resident, mode='idle', frame=0){
   const phase=mode==='hop'?Math.round((Math.sin(frame)+1)*2):mode==='work'?(Math.sin(frame*3)>0?1:0):Math.sin(frame*.3)>.995?1:0;
   const cacheKey=resident.id+':'+mode+':'+phase;
   if(spriteCache.has(cacheKey))return spriteCache.get(cacheKey);
-  const canvas=document.createElement('canvas');canvas.width=32;canvas.height=36;
-  const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;
+  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=72;
+  const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.scale(2,2);
   const bob=mode==='hop'?phase-2:0;
   c.translate(0,-bob);
+  if(getArt('bubble'))c.drawImage(getArt('bubble'),0,0,32,36);
+  else {
   rect(c,7,28,20,3,'#112b2755');
   const outline='#3d4840';
   [[10,9,12,2],[7,11,18,3],[5,14,22,10],[3,20,26,4],[6,24,20,5],[8,28,6,2],[20,28,5,2]].forEach(([x,y,w,h])=>rect(c,x,y,w,h,outline));
@@ -18,7 +22,9 @@ export function bubbleSprite(resident, mode='idle', frame=0){
   const blink=Math.sin(frame*.3)>0.995;
   rect(c,12,18,2,blink?1:3,'#34463f');rect(c,21,18,2,blink?1:3,'#34463f');
   rect(c,16,22,3,1,'#6e6652');rect(c,10,22,3,1,'#e7a897');rect(c,23,22,2,1,'#e7a897');
-  if(resident.accessory==='sprout'||resident.accessory==='leaf'){rect(c,16,6,2,5,'#687e49');rect(c,12,4,5,3,'#9eb66f');rect(c,17,3,5,3,'#c4ce81');}
+  }
+  if(resident.accessory==='sprout'){rect(c,16,6,2,5,'#687e49');rect(c,12,4,5,3,'#9eb66f');rect(c,17,3,5,3,'#c4ce81');}
+  if(resident.accessory==='leaf'){rect(c,16,6,2,5,'#687e49');rect(c,17,4,6,3,'#9eb66f');}
   if(resident.accessory==='cap'){rect(c,8,10,14,2,'#638ea0');rect(c,11,7,9,3,'#b2d4d4');}
   if(resident.accessory==='flower'){rect(c,7,9,6,2,'#e9c8bd');rect(c,9,7,2,6,'#e5bdd5');rect(c,9,9,2,2,'#efdb98');}
   if(resident.accessory==='tuft'){rect(c,15,6,4,5,'#ddaf76');rect(c,18,5,3,3,'#f4d391');}
@@ -29,6 +35,7 @@ export function bubbleSprite(resident, mode='idle', frame=0){
 // Stable texture: never use frame-dependent randomness for terrain or foliage.
 const noise=(x,y,seed=0)=>{const n=Math.sin(x*127.1+y*311.7+seed*73.3)*43758.5453;return n-Math.floor(n);};
 function tree(c,x,y,small=false,fade=false){
+  if(getArt('tree')){c.save();c.globalAlpha=fade?.32:1;drawArt(c,'tree',x,y);c.restore();return;}
   const s=small?.75:1;c.save();c.translate(x,y);c.scale(s,s);
   rect(c,-22,-1,44,7,'#193c3744');
   poly(c,[[-12,3],[-5,-13],[-6,-58],[7,-58],[6,-13],[16,4],[5,1],[-3,1]],'#46382c');
@@ -48,6 +55,7 @@ function tree(c,x,y,small=false,fade=false){
   c.restore();
 }
 function cave(c,x,y){
+  if(drawArt(c,'cave',x,y))return;
   rect(c,x-54,y-3,108,12,'#19372e66');
   poly(c,[[x-57,y],[x-56,y-38],[x-42,y-66],[x-20,y-87],[x+19,y-89],[x+45,y-65],[x+59,y-26],[x+57,y]],'#3d392f');
   poly(c,[[x-52,y-5],[x-49,y-40],[x-34,y-66],[x-15,y-81],[x+18,y-80],[x+38,y-59],[x+51,y-25],[x+51,y-5]],'#78634b');
@@ -73,7 +81,7 @@ function resource(c,r){const {x,y}=project(r.x,r.y,'surface');
 function diamond(c,x,y,color,edge){poly(c,[[x,y-10],[x+19,y],[x,y+10],[x-19,y]],color);if(edge){c.strokeStyle=edge;c.lineWidth=1;c.stroke();}}
 export class Renderer {
   constructor(canvas,world){this.canvas=canvas;this.ctx=canvas.getContext('2d');this.world=world;this.hits=[];this.width=1;this.height=1;}
-  resize(w,h){this.width=w;this.height=h;this.canvas.width=Math.ceil(w/2);this.canvas.height=Math.ceil(h/2);}
+  resize(w,h){this.width=w;this.height=h;this.canvas.width=Math.ceil(w*2);this.canvas.height=Math.ceil(h*2);}
   draw(view,time){
     const c=this.ctx,w=this.width,h=this.height;this.hits=[];
     c.setTransform(this.canvas.width/w,0,0,this.canvas.height/h,0,0);c.imageSmoothingEnabled=false;
@@ -89,6 +97,7 @@ export class Renderer {
       const p=project(x,y,'surface'),n=noise(x,y);
       const water=x<3&&y>10;
       const path=(Math.abs(x-8)<1.7&&y>=5&&y<12)||(Math.abs(y-10)<1.5&&x>6&&x<15);
+      if(!water&&!path&&drawArt(c,'grass',p.x,p.y))continue;
       diamond(c,p.x,p.y,water?'#3d8588':path?'#b7a16b':['#7c9352','#809653','#829855'][Math.floor(n*3)]);
       for(let j=0;j<7;j++){
         const dx=Math.floor(noise(x+j,y,4)*27)-13,dy=Math.floor(noise(x,y+j,5)*10)-5;
@@ -111,7 +120,7 @@ export class Renderer {
         const selected=i<5&&v.selected?.id===b.id;
         if(selected)diamond(c,p.x,p.y+3,'#e5d69d33','#eedaa1');
         const mode=i<5?(v.animations[b.id]||'idle'):['idle','hop','haul','work'][i%4];
-        const sprite=bubbleSprite(b,mode,t+i*2);c.drawImage(sprite,Math.round(p.x-16),Math.round(p.y-30));
+        const sprite=bubbleSprite(b,mode,t+i*2);c.drawImage(sprite,Math.round(p.x-16),Math.round(p.y-30),32,36);
         if(i<5)this.addHit(v,b.id,p.x,p.y-14,19,{type:'resident'});
         if(selected){rect(c,p.x-2,p.y-42+Math.sin(t)*2,4,4,'#f4d893');}
       }});

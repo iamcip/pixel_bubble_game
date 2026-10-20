@@ -1,6 +1,6 @@
 # 手機預覽與 GitHub Pages
 
-`gh-pages` 分支只發布 index.html、styles.css、src/ 與 .nojekyll；不包含規格書、Word 文件或概念圖。
+`gh-pages` 分支只發布 index.html、styles.css、src/、assets/game/ 與 .nojekyll；不包含規格書、Word 文件或概念圖。
 
 首次啟用：Repository Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: gh-pages / (root) → Save。
 
