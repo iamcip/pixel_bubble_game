@@ -1,24 +1,26 @@
 import { project, key } from './world.js';
 import { getArt, drawArt } from './art.js';
+import { bubblePalette, coloredBubble, clearBubbleColors } from './bubble-colors.js';
 const spriteCache=new Map();
-export function clearSpriteCache(){spriteCache.clear();}
+export function clearSpriteCache(){spriteCache.clear();clearBubbleColors();}
 const rect=(c,x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),w,h);};
 function poly(c,points,color){c.fillStyle=color;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();}
 export function bubbleSprite(resident, mode='idle', frame=0){
   const phase=mode==='hop'?Math.round((Math.sin(frame)+1)*2):mode==='work'?(Math.sin(frame*3)>0?1:0):Math.sin(frame*.3)>.995?1:0;
-  const cacheKey=resident.id+':'+mode+':'+phase;
+  const palette=bubblePalette(resident);
+  const cacheKey=JSON.stringify([resident.id,resident.accessory,palette,mode,phase]);
   if(spriteCache.has(cacheKey))return spriteCache.get(cacheKey);
   const canvas=document.createElement('canvas');canvas.width=64;canvas.height=72;
   const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.scale(2,2);
   const bob=mode==='hop'?phase-2:0;
   c.translate(0,-bob);
-  if(getArt('bubble'))c.drawImage(getArt('bubble'),0,0,32,36);
+  if(getArt('bubble'))c.drawImage(coloredBubble(getArt('bubble'),resident),0,0,32,36);
   else {
   rect(c,7,28,20,3,'#112b2755');
   const outline='#3d4840';
   [[10,9,12,2],[7,11,18,3],[5,14,22,10],[3,20,26,4],[6,24,20,5],[8,28,6,2],[20,28,5,2]].forEach(([x,y,w,h])=>rect(c,x,y,w,h,outline));
-  [[10,11,12,2],[8,13,16,3],[6,16,20,8],[5,21,23,2],[8,24,16,4]].forEach(([x,y,w,h])=>rect(c,x,y,w,h,resident.color));
-  rect(c,7,24,18,3,resident.shade);rect(c,8,15,3,5,'#fff7db88');
+  [[10,11,12,2],[8,13,16,3],[6,16,20,8],[5,21,23,2],[8,24,16,4]].forEach(([x,y,w,h])=>rect(c,x,y,w,h,palette.bodyColor));
+  rect(c,7,24,18,3,palette.shadowColor);rect(c,8,15,3,5,'#fff7db88');
   const blink=Math.sin(frame*.3)>0.995;
   rect(c,12,18,2,blink?1:3,'#34463f');rect(c,21,18,2,blink?1:3,'#34463f');
   rect(c,16,22,3,1,'#6e6652');rect(c,10,22,3,1,'#e7a897');rect(c,23,22,2,1,'#e7a897');
