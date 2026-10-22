@@ -1,4 +1,4 @@
-import { CONFIG, RESIDENTS } from './data.js';
+import { CONFIG, RESIDENTS } from './data.js?v=colors-20261022';
 export const key = (x, y) => `${x},${y}`;
 export function initialWorld() {
   const floor = new Set();

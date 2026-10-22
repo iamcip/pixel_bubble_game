@@ -6,11 +6,11 @@ export const CONFIG = Object.freeze({
   zoom: { min: 0.65, max: 2.5 },
 });
 export const RESIDENTS = [
-  { id: 'bubble-01', name: '米米', color: '#efd58f', shade: '#c39f61', accessory: 'sprout', note: '第一個發現山洞，現在正在想像新家的模樣。' },
-  { id: 'bubble-02', name: '芽芽', color: '#b7ce96', shade: '#819c72', accessory: 'leaf', note: '喜歡森林的氣味，想找一個暖暖的角落。' },
-  { id: 'bubble-03', name: '露露', color: '#a4c7cf', shade: '#7296ac', accessory: 'cap', note: '小心地打量四周，口袋裡裝著一點勇氣。' },
-  { id: 'bubble-04', name: '朵朵', color: '#c8b4d7', shade: '#9882b4', accessory: 'flower', note: '說這裡的微光，看起來像掉下來的星星。' },
-  { id: 'bubble-05', name: '桃桃', color: '#e9b6a2', shade: '#c78d7c', accessory: 'tuft', note: '有朋友、有食物，就可以慢慢把這裡變成家。' },
+  { id: 'bubble-01', name: '米米', bodyColor: '#FBECD5', shadowColor: '#BEAEC4', accessory: 'sprout', note: '第一個發現山洞，現在正在想像新家的模樣。' },
+  { id: 'bubble-02', name: '芽芽', bodyColor: '#BBCBA8', shadowColor: '#8E8AA5', accessory: 'leaf', note: '喜歡森林的氣味，想找一個暖暖的角落。' },
+  { id: 'bubble-03', name: '露露', bodyColor: '#B5CFDC', shadowColor: '#9290B1', accessory: 'cap', note: '小心地打量四周，口袋裡裝著一點勇氣。' },
+  { id: 'bubble-04', name: '朵朵', bodyColor: '#D0BFE2', shadowColor: '#9D88B4', accessory: 'flower', note: '說這裡的微光，看起來像掉下來的星星。' },
+  { id: 'bubble-05', name: '桃桃', bodyColor: '#E4BBBE', shadowColor: '#AD8FA9', accessory: 'tuft', note: '有朋友、有食物，就可以慢慢把這裡變成家。' },
 ];
 export const ITEMS = {
   food: { id: 'food', name: '食物', slots: 1, edible: true },

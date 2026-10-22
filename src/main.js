@@ -1,6 +1,6 @@
-import { CONFIG } from './data.js';
-import { initialWorld, project, unproject, inBounds, key, toggleDig, digStatus, canPlaceZone, clampCamera } from './world.js';
-import { Renderer, bubbleSprite, clearSpriteCache } from './render.js?v=art-20261020';
+import { CONFIG } from './data.js?v=colors-20261022';
+import { initialWorld, project, unproject, inBounds, key, toggleDig, digStatus, canPlaceZone, clampCamera } from './world.js?v=colors-20261022';
+import { Renderer, bubbleSprite, clearSpriteCache } from './render.js?v=colors-20261022';
 import { loadArt } from './art.js';
 const $=s=>document.querySelector(s), world=initialWorld(), canvas=$('#world'), renderer=new Renderer(canvas,world);
 const cameras={surface:{x:0,y:-155,zoom:1},underground:{x:0,y:-90,zoom:1}};
