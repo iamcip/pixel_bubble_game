@@ -1,8 +1,17 @@
+import { createSimulation, queueGather, cancelJob, advance, serialize, restore } from './simulation.js?v=m2-20261023';
 import { CONFIG } from './data.js?v=colors-20261022';
 import { initialWorld, project, unproject, inBounds, key, toggleDig, digStatus, canPlaceZone, clampCamera } from './world.js?v=colors-20261022';
 import { Renderer, bubbleSprite, clearSpriteCache } from './render.js?v=colors-20261022';
 import { loadArt } from './art.js';
 const $=s=>document.querySelector(s), world=initialWorld(), canvas=$('#world'), renderer=new Renderer(canvas,world);
+const SAVE_KEY='bubble-colony-m2';
+let simulation;
+try { simulation=restore(localStorage.getItem(SAVE_KEY)); } catch { simulation=null; }
+if(!simulation)simulation=createSimulation(world);
+function syncSimulation(){world.inventory={...simulation.inventory};world.resources=simulation.resources;world.residents=simulation.residents;for(const j of simulation.jobs){if(j.state==='done'||j.state==='cancelled'||j.state==='invalid')world.marks.delete(j.target);}}
+syncSimulation();
+let saveElapsed=0;
+function saveGame(){try{localStorage.setItem(SAVE_KEY,serialize(simulation));}catch(e){console.warn('Save failed',e);}}
 const cameras={surface:{x:0,y:-155,zoom:1},underground:{x:0,y:-90,zoom:1}};
 const view={scene:'surface',camera:cameras.surface,selected:null,tool:'inspect',stress:false,animations:{},previewSeconds:0};
 let paused=false,speed=1,animationTime=0,lastTime=0,hidden=document.hidden,toastTimer,frames=0,fpsAt=0,lastFps=0;
@@ -35,6 +44,7 @@ function renderResidents(){
 }
 function action(label,fn,primary=false){const b=document.createElement('button');b.textContent=label;b.classList.toggle('primary',primary);b.onclick=fn;$('#actions').append(b);return b;}
 function panel(title,note){$('#selection').replaceChildren();const h=document.createElement('h2'),p=document.createElement('p');h.textContent=title;p.textContent=note;$('#selection').append(h,p);$('#actions').replaceChildren();}
+function updateResources(){const inv=simulation.inventory;const values=document.querySelectorAll('.resource-row strong');[inv.food,inv.wood,inv.fiber].forEach((n,i)=>{if(values[i])values[i].textContent=n;});}
 function updateMarks(){$('#mark-count').textContent=`${world.marks.size} 個工作標記`;}
 function renderPanel(){
   updateMarks();const id=view.selected?.id;
@@ -46,7 +56,7 @@ function renderPanel(){
   const r=world.resources.find(r=>r.id===id);
   if(r){const labels={berry:'一叢野莓',mushroom:'柔光蘑菇',nut:'落下的堅果',branch:'乾燥枝條',fiber:'柔軟纖維',tree:'小型軟木樹'};
     const verb=r.type==='tree'?'砍伐':'採集';
-    panel(labels[r.type],`${r.amount} ${['berry','mushroom','nut'].includes(r.type)?'份食物':'單位材料'} · ${world.marks.has(id)?`已標記，等待泡泡${verb}；再點物品可取消`:'點一下物品即可標記'}。目前為操作預覽，尚未派工。`);
+    panel(labels[r.type],`${r.amount} ${['berry','mushroom','nut'].includes(r.type)?'份食物':'單位材料'} · ${world.marks.has(id)?`已標記，等待泡泡${verb}；再點物品可取消`:'點一下物品即可標記'}。泡泡會自動領取工作。`);
     action(world.marks.has(id)?'取消標記':'標記'+verb,()=>{toggleResource(r);renderPanel();},true);return;
   }
   if(id.startsWith('cell-')){const {x,y}=view.selected,open=world.floor.has(key(x,y));
@@ -84,8 +94,8 @@ canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointer
 canvas.addEventListener('wheel',e=>{e.preventDefault();const p=local(e);zoomTo(view.camera.zoom*Math.exp(-e.deltaY*.001),p.x,p.y);},{passive:false});
 function toggleResource(r){
   const verb=r.type==='tree'?'砍伐':'採集';
-  if(world.marks.has(r.id)){world.marks.delete(r.id);toast('已取消'+verb+'標記');}
-  else{world.marks.set(r.id,{id:`gather-${r.id}`,type:'gather',target:r.id});toast(`已標記，等待泡泡${verb}（目前為操作預覽）`);}
+  if(world.marks.has(r.id)){if(!cancelJob(simulation,r.id)){toast('正在搬運，無法取消');return;}world.marks.delete(r.id);toast('已取消'+verb+'標記');}
+  else{const job=queueGather(simulation,r.id);if(!job){toast('資源已採完');return;}world.marks.set(r.id,{id:job.id,type:'gather',target:r.id});toast(`已標記，等待泡泡${verb}`);}
 }
 function markDig(x,y){
   if(!toggleDig(world,x,y)){toast('這裡已經挖開，請選擇泥土格');return;}
@@ -122,13 +132,14 @@ function selectAt(x,y){
 canvas.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','0'].includes(e.key)){e.preventDefault();if(e.key==='+')zoomTo(view.camera.zoom*1.2);else if(e.key==='-')zoomTo(view.camera.zoom/1.2);else if(e.key==='0')resetCamera();else{view.camera.x+=e.key==='ArrowLeft'?30:e.key==='ArrowRight'?-30:0;view.camera.y+=e.key==='ArrowUp'?30:e.key==='ArrowDown'?-30:0;clampCamera(view.camera,renderer.width,renderer.height,view.scene);}}});
 function frame(now){
   const dt=lastTime?Math.min((now-lastTime)/1000,.1):0;lastTime=now;
-  if(!paused&&!hidden){animationTime+=dt*speed;view.previewSeconds+=dt*speed;}
+  if(!paused&&!hidden){animationTime+=dt*speed;view.previewSeconds=simulation.seconds;const elapsed=dt*speed;advance(simulation,elapsed);syncSimulation();saveElapsed+=elapsed;if(saveElapsed>=5){saveElapsed=0;saveGame();}updateResources();}
   if(!hidden){renderer.draw(view,animationTime);frames++;if(now-fpsAt>=1000){lastFps=Math.round(frames*1000/(now-fpsAt));fpsAt=now;frames=0;}}
-  const totalMinutes=Math.floor(view.previewSeconds/CONFIG.daySeconds*1440+480),minutes=totalMinutes%1440;
+  const totalMinutes=Math.floor(simulation.seconds/CONFIG.daySeconds*1440+480),minutes=totalMinutes%1440;
   $('#clock').textContent=`第 ${1+Math.floor(totalMinutes/1440)} 天 · ${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
   requestAnimationFrame(frame);
 }
-resize();resetCamera();renderResidents();renderTools();renderPanel();requestAnimationFrame(frame);
+resize();resetCamera();renderResidents();renderTools();renderPanel();updateResources();requestAnimationFrame(frame);
+window.addEventListener('pagehide',saveGame);
 loadArt().then(results=>{
   clearSpriteCache();renderResidents();
   if(results.some(r=>!r.ok))toast('部分新素材未載入，暫時使用原圖；請重新整理。');

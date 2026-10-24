@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#152c2a">
   <meta name="description" content="五隻小泡泡，一個新家的開始。進擊的泡泡：雙場景像素互動原型。">
   <title>進擊的泡泡 · 森林裡的新家</title>
-  <link rel="stylesheet" href="styles.css?v=art-20261020">
+  <link rel="stylesheet" href="styles.css?v=m2-20261023">
 </head>
 <body>
   <main id="app">
     <header>
-      <div class="title-row"><div><p class="eyebrow">BUBBLE COLONY <span>· M1 原型</span></p><h1>進擊的泡泡<span class="title-dot">✦</span></h1></div><button id="help" aria-label="操作說明">?</button></div>
-      <div class="resource-row" aria-label="開局物資"><span><i class="dot food"></i>食物 <strong>15</strong><small>可支撐 3 天</small></span><span><i class="dot wood"></i>木材 <strong>0</strong></span><span><i class="dot fiber"></i>纖維 <strong>0</strong></span></div>
+      <div class="title-row"><div><p class="eyebrow">BUBBLE COLONY <span>· M2 測試版</span></p><h1>進擊的泡泡<span class="title-dot">✦</span></h1></div><button id="help" aria-label="操作說明">?</button></div>
+      <div class="resource-row" aria-label="開局物資"><span><i class="dot food"></i>食物 <strong>15</strong><small>隨時間消耗</small></span><span><i class="dot wood"></i>木材 <strong>0</strong></span><span><i class="dot fiber"></i>纖維 <strong>0</strong></span></div>
     </header>
     <section class="world" aria-label="家園場景">
       <div class="world-top"><nav aria-label="場景"><button id="surface" class="active" aria-pressed="true">♧ 地表</button><button id="underground" aria-pressed="false">⌂ 地下</button></nav><span class="weather">初春 <span>·</span> 晴朗</span></div>
@@ -27,11 +27,11 @@
       <div id="actions"></div>
       <div id="residents" class="residents" aria-label="五隻居民"></div>
       <nav id="tools" class="tools" aria-label="地圖工具"></nav>
-      <p class="prototype-note">畫面與操作驗證版 · 標記尚未派工，物資與需求未開始模擬</p>
+      <p class="prototype-note">M2 測試版 · 採集與搬運自動執行，存檔於此瀏覽器；挖掘及建造待 M3</p>
     </section>
-    <dialog id="help-dialog"><form method="dialog"><div class="eyebrow">WELCOME TO THE FOREST</div><h2>一個小小的開始</h2><p>單指拖曳地圖，雙指縮放。點選泡泡查看資訊；採集物點一下標記、再點一下取消；點洞口直接進入地下，點地下出口直接回到地表。</p><p>地下可以標記挖掘、睡眠區與儲物區。這些是 M1 操作預覽，尚不會施工或消耗材料。</p><p>上方時間控制僅預覽日夜與動畫。完整尋路、派工與存檔接在 M2。</p><label class="stress"><input id="stress" type="checkbox"> 顯示 20 隻泡泡，測試擁擠與遮擋</label><p id="fps"></p><button class="primary">去看看小泡泡</button></form></dialog>
+    <dialog id="help-dialog"><form method="dialog"><div class="eyebrow">WELCOME TO THE FOREST</div><h2>一個小小的開始</h2><p>單指拖曳地圖，雙指縮放。點選泡泡查看資訊；採集物點一下標記、再點一下取消；點洞口直接進入地下，點地下出口直接回到地表。</p><p>地下可以標記挖掘、睡眠區與儲物區。地下挖掘與區域建造仍為預覽，預計 M3 實作。</p><p>時間控制現在會推進採集、搬運與食物消耗；進度自動儲存於瀏覽器。</p><label class="stress"><input id="stress" type="checkbox"> 顯示 20 隻泡泡，測試擁擠與遮擋</label><p id="fps"></p><button class="primary">去看看小泡泡</button></form></dialog>
     <div id="toast" role="status"></div>
   </main>
-  <script type="module" src="src/main.js?v=colors-20261022"></script>
+  <script type="module" src="src/main.js?v=m2-20261023"></script>
 </body>
 </html>
