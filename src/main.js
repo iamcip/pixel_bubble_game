@@ -8,8 +8,11 @@ const SAVE_KEY='bubble-colony-m2';
 let simulation;
 try { simulation=restore(localStorage.getItem(SAVE_KEY)); } catch { simulation=null; }
 if(!simulation)simulation=createSimulation(world);
+// New colonies start with visible, useful work instead of five motionless residents.
+if(simulation.jobs.length===0 && simulation.seconds<CONFIG.daySeconds)for(const id of ['berry-01','mushroom-01','branch-01','fiber-01','nut-01'])queueGather(simulation,id);
 function syncSimulation(){world.inventory={...simulation.inventory};world.resources=simulation.resources;world.residents=simulation.residents;for(const j of simulation.jobs){if(j.state==='done'||j.state==='cancelled'||j.state==='invalid')world.marks.delete(j.target);}}
 syncSimulation();
+for(const j of simulation.jobs)if(!['done','cancelled','invalid'].includes(j.state))world.marks.set(j.target,{id:j.id,type:'gather',target:j.target});
 let saveElapsed=0;
 function saveGame(){try{localStorage.setItem(SAVE_KEY,serialize(simulation));}catch(e){console.warn('Save failed',e);}}
 const cameras={surface:{x:0,y:-155,zoom:1},underground:{x:0,y:-90,zoom:1}};
@@ -132,7 +135,7 @@ function selectAt(x,y){
 canvas.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','0'].includes(e.key)){e.preventDefault();if(e.key==='+')zoomTo(view.camera.zoom*1.2);else if(e.key==='-')zoomTo(view.camera.zoom/1.2);else if(e.key==='0')resetCamera();else{view.camera.x+=e.key==='ArrowLeft'?30:e.key==='ArrowRight'?-30:0;view.camera.y+=e.key==='ArrowUp'?30:e.key==='ArrowDown'?-30:0;clampCamera(view.camera,renderer.width,renderer.height,view.scene);}}});
 function frame(now){
   const dt=lastTime?Math.min((now-lastTime)/1000,.1):0;lastTime=now;
-  if(!paused&&!hidden){animationTime+=dt*speed;view.previewSeconds=simulation.seconds;const elapsed=dt*speed;advance(simulation,elapsed);syncSimulation();saveElapsed+=elapsed;if(saveElapsed>=5){saveElapsed=0;saveGame();}updateResources();}
+  if(!paused&&!hidden){animationTime+=dt*speed;const elapsed=dt*speed;advance(simulation,elapsed);view.previewSeconds=simulation.seconds;syncSimulation();saveElapsed+=elapsed;if(saveElapsed>=5){saveElapsed=0;saveGame();}updateResources();}
   if(!hidden){renderer.draw(view,animationTime);frames++;if(now-fpsAt>=1000){lastFps=Math.round(frames*1000/(now-fpsAt));fpsAt=now;frames=0;}}
   const totalMinutes=Math.floor(simulation.seconds/CONFIG.daySeconds*1440+480),minutes=totalMinutes%1440;
   $('#clock').textContent=`第 ${1+Math.floor(totalMinutes/1440)} 天 · ${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
